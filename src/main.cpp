@@ -1,14 +1,11 @@
 #include <cstdio>
 #include <iostream>
 #include <sstream>
-#include <ostream>
 #include <string>
 #include <vector>
 
-
-
-std::string run_command(const char* cmd){
-    char buffer [256];
+std::string run_command(const char* cmd) {
+    char buffer[256];
     std::string result;
 
     FILE* pipe = popen(cmd, "r");
@@ -41,27 +38,50 @@ struct metadata {
     std::string length;
 };
 
-
 metadata parse_metadata(const std::string& info) {
     std::vector<std::string> lines = split_lines(info);
     metadata data;
 
     for (const auto& line : lines) {
-        if (line.find("xesam:title") != std::string::npos) {
-            data.title = line.substr(line.find(":") + 2);
-        } else if (line.find("xesam:artist") != std::string::npos) {
-            data.artist = line.substr(line.find(":") + 2);
-        } else if (line.find("xesam:album") != std::string::npos) {
-            data.album = line.substr(line.find(":") + 2);
-        } else if (line.find("mpris:length") != std::string::npos) {
-            data.length = line.substr(line.find(":") + 2);
+        size_t separator_pos = line.find("  ");
+        if (separator_pos == std::string::npos) {
+            separator_pos = line.find("\t");
+        }
+
+        if (separator_pos == std::string::npos) {
+            continue;
+        }
+
+
+        std::string key = line.substr(0, separator_pos);
+        std::string value = line.substr(separator_pos);
+
+
+        size_t first_non_space = value.find_first_not_of(" \t");
+        if (first_non_space != std::string::npos) {
+            value = value.substr(first_non_space);
+        }
+
+
+        size_t potify_pos = key.find("potify ");
+        if (potify_pos != std::string::npos) {
+            key = key.substr(potify_pos + 7);
+        }
+
+
+        if (key.find("xesam:title") != std::string::npos) {
+            data.title = value;
+        } else if (key.find("xesam:artist") != std::string::npos) {
+            data.artist = value;
+        } else if (key.find("xesam:album") != std::string::npos) {
+            data.album = value;
+        } else if (key.find("mpris:length") != std::string::npos) {
+            data.length = value;
         }
     }
 
     return data;
 }
-
-
 
 int main() {
     std::string info = run_command("playerctl metadata");
@@ -69,6 +89,6 @@ int main() {
     std::cout << "Title: " << data.title << std::endl;
     std::cout << "Artist: " << data.artist << std::endl;
     std::cout << "Album: " << data.album << std::endl;
-    std::cout << "Length (ns) " << data.length << std::endl;
+    std::cout << "Length (ns): " << data.length << std::endl;
     return 0;
 }
