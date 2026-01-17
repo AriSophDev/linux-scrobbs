@@ -52,7 +52,7 @@ metadata parse_metadata(const string& info) {
         if (non_space != string::npos)
             value = value.substr(non_space);
 
-        // Limpia "spotify xesam:title" → "xesam:title"
+
         size_t last_space = key.rfind(' ');
         if (last_space != string::npos)
             key = key.substr(last_space + 1);
@@ -74,5 +74,3 @@ double get_current_position() {
     if (out.empty()) return 0.0;
     return std::stod(out);
 }
-
-
